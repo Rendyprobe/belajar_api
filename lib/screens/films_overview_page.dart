@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../cubit/films_cubit.dart';
+import '../cubit/films_state.dart';
 import '../models/ghibli_film.dart';
-import '../services/studio_ghibli_service.dart';
 import 'film_detail_page.dart';
 
 class FilmsOverviewPage extends StatefulWidget {
@@ -12,84 +14,30 @@ class FilmsOverviewPage extends StatefulWidget {
 }
 
 class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
-  final StudioGhibliService _service = StudioGhibliService();
-  final TextEditingController _searchController = TextEditingController();
-
-  List<GhibliFilm> _allFilms = const [];
-  List<GhibliFilm> _filteredFilms = const [];
-  bool _isLoading = false;
-  String? _errorMessage;
+  late final TextEditingController _searchController;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_handleSearchChanged);
-    _loadFilms();
+    _searchController = TextEditingController();
+    _searchController.addListener(_handleQueryChanged);
   }
 
   @override
   void dispose() {
-    _searchController.removeListener(_handleSearchChanged);
+    _searchController.removeListener(_handleQueryChanged);
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadFilms() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final films = await _service.fetchFilms();
-      setState(() {
-        _allFilms = films;
-        _filteredFilms = films;
-      });
-    } catch (error) {
-      setState(() {
-        _errorMessage = error.toString();
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  void _handleSearchChanged() {
-    final query = _searchController.text.trim().toLowerCase();
-    if (query.isEmpty) {
-      setState(() {
-        _filteredFilms = _allFilms;
-      });
-      return;
-    }
-
-    final filtered = _allFilms.where((film) {
-      final title = film.title.toLowerCase();
-      final original = film.originalTitle?.toLowerCase() ?? '';
-      final originalRomanized =
-          film.originalTitleRomanized?.toLowerCase() ?? '';
-      final director = film.director.toLowerCase();
-      final producer = film.producer.toLowerCase();
-      final description = film.description.toLowerCase();
-      return title.contains(query) ||
-          original.contains(query) ||
-          originalRomanized.contains(query) ||
-          director.contains(query) ||
-          producer.contains(query) ||
-          description.contains(query);
-    }).toList();
-
-    setState(() {
-      _filteredFilms = filtered;
-    });
+  void _handleQueryChanged() {
+    context.read<FilmsCubit>().updateQuery(_searchController.text);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFF0B1D2A),
       body: SafeArea(
@@ -104,41 +52,55 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
               ],
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Studio Ghibli',
-                      style: theme.textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+          child: BlocConsumer<FilmsCubit, FilmsState>(
+            listenWhen: (previous, current) => previous.query != current.query,
+            listener: (_, state) {
+              if (_searchController.text != state.query) {
+                _searchController
+                  ..text = state.query
+                  ..selection = TextSelection.fromPosition(
+                    TextPosition(offset: state.query.length),
+                  );
+              }
+            },
+            builder: (context, state) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Studio Ghibli',
+                          style: theme.textTheme.displaySmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Jelajahi dunia magis karya Hayao Miyazaki dan rekan-rekannya.',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _buildSearchField(theme),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Jelajahi dunia magis karya Hayao Miyazaki dan rekan-rekannya.',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: Colors.white70,
-                      ),
+                  ),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: _buildBodyContent(context, theme, state),
                     ),
-                    const SizedBox(height: 24),
-                    _buildSearchField(theme),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: _buildBodyContent(theme),
-                ),
-              ),
-            ],
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -166,8 +128,12 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
     );
   }
 
-  Widget _buildBodyContent(ThemeData theme) {
-    if (_isLoading) {
+  Widget _buildBodyContent(
+    BuildContext context,
+    ThemeData theme,
+    FilmsState state,
+  ) {
+    if (state.isLoading && state.films.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -175,24 +141,25 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
       );
     }
 
-    if (_errorMessage != null) {
+    if (state.isFailure) {
       return _buildMessage(
+        context,
         theme,
-        message: 'Gagal memuat katalog.\n$_errorMessage',
+        message: 'Gagal memuat katalog.\n${state.errorMessage ?? ''}',
         actionLabel: 'Coba Lagi',
-        onAction: _loadFilms,
+        onAction: () => context.read<FilmsCubit>().loadFilms(),
       );
     }
 
-    if (_filteredFilms.isEmpty) {
+    if (state.filteredFilms.isEmpty) {
       return _buildMessage(
+        context,
         theme,
         message:
             'Tidak ada film yang cocok.\nCoba kata kunci lain atau hapus pencarian.',
         actionLabel: 'Hapus Pencarian',
         onAction: () {
-          _searchController.clear();
-          _handleSearchChanged();
+          context.read<FilmsCubit>().clearSearch();
         },
       );
     }
@@ -200,13 +167,13 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
     return RefreshIndicator(
       color: Colors.white,
       backgroundColor: const Color(0xFF134466),
-      onRefresh: _loadFilms,
+      onRefresh: context.read<FilmsCubit>().refresh,
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        itemCount: _filteredFilms.length,
+        itemCount: state.filteredFilms.length,
         separatorBuilder: (_, __) => const SizedBox(height: 20),
         itemBuilder: (context, index) {
-          final film = _filteredFilms[index];
+          final film = state.filteredFilms[index];
           return _FilmCard(
             film: film,
             onTap: () {
@@ -223,6 +190,7 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
   }
 
   Widget _buildMessage(
+    BuildContext context,
     ThemeData theme, {
     required String message,
     String? actionLabel,
@@ -258,7 +226,12 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
                     borderRadius: BorderRadius.circular(28),
                   ),
                 ),
-                onPressed: onAction,
+                onPressed: () {
+                  if (actionLabel == 'Hapus Pencarian') {
+                    _searchController.clear();
+                  }
+                  onAction();
+                },
                 child: Text(actionLabel),
               ),
             ],
@@ -299,7 +272,8 @@ class _FilmCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(28)),
               child: Hero(
                 tag: 'poster_${film.id}',
                 child: AspectRatio(

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'cubit/films_cubit.dart';
 import 'screens/films_overview_page.dart';
+import 'services/studio_ghibli_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,22 +22,25 @@ class MyApp extends StatelessWidget {
       useMaterial3: true,
     );
 
-    return MaterialApp(
-      title: 'Studio Ghibli Explorer',
-      debugShowCheckedModeBanner: false,
-      theme: baseTheme.copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0B1D2A),
-        textTheme: baseTheme.textTheme.apply(
-          bodyColor: Colors.white,
-          displayColor: Colors.white,
+    return BlocProvider(
+      create: (_) => FilmsCubit(StudioGhibliService())..loadFilms(),
+      child: MaterialApp(
+        title: 'Studio Ghibli Explorer',
+        debugShowCheckedModeBanner: false,
+        theme: baseTheme.copyWith(
+          scaffoldBackgroundColor: const Color(0xFF0B1D2A),
+          textTheme: baseTheme.textTheme.apply(
+            bodyColor: Colors.white,
+            displayColor: Colors.white,
+          ),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            centerTitle: false,
+          ),
         ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: false,
-        ),
+        home: const FilmsOverviewPage(),
       ),
-      home: const FilmsOverviewPage(),
     );
   }
 }
