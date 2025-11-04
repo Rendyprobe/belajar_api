@@ -27,11 +27,12 @@ class GhibliFilm {
       rottenTomatoesScore: (json['rt_score'] as String? ?? '').trim(),
       imageUrl: (json['image'] as String? ?? '').trim(),
       bannerUrl: (json['movie_banner'] as String? ?? '').trim(),
-      movieUrl: json['url'] as String? ??
+      movieUrl:
+          json['url'] as String? ??
           'https://ghibliapi.vercel.app/films/${json['id']}',
       originalTitle: (json['original_title'] as String?)?.trim(),
-      originalTitleRomanized:
-          (json['original_title_romanised'] as String?)?.trim(),
+      originalTitleRomanized: (json['original_title_romanised'] as String?)
+          ?.trim(),
     );
   }
 
@@ -51,8 +52,9 @@ class GhibliFilm {
 
   String get releaseInfo {
     final year = releaseYear.isEmpty ? null : releaseYear;
-    final duration =
-        runningTimeMinutes.isEmpty ? null : '$runningTimeMinutes menit';
+    final duration = runningTimeMinutes.isEmpty
+        ? null
+        : '$runningTimeMinutes menit';
     if (year == null && duration == null) return '';
     if (year != null && duration != null) return '$year • $duration';
     return year ?? duration ?? '';

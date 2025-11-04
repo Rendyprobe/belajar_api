@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sizer/sizer.dart';
 
 import '../models/ghibli_film.dart';
 
@@ -10,7 +12,21 @@ class FilmDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bannerUrl = film.bannerUrl.isNotEmpty ? film.bannerUrl : film.imageUrl;
+    final bannerUrl = film.bannerUrl.isNotEmpty
+        ? film.bannerUrl
+        : film.imageUrl;
+    final expandedHeight = (45.h).clamp(280.0, 420.0).toDouble();
+    final titlePaddingHorizontal = (4.w).clamp(16.0, 32.0).toDouble();
+    final titlePaddingBottom = (2.h).clamp(12.0, 24.0).toDouble();
+    final contentHorizontal = (5.w).clamp(16.0, 40.0).toDouble();
+    final contentTop = (3.h).clamp(20.0, 40.0).toDouble();
+    final contentBottom = (5.h).clamp(28.0, 56.0).toDouble();
+    final sectionSpacing = (2.h).clamp(16.0, 28.0).toDouble();
+    final wrapSpacing = (3.w).clamp(12.0, 32.0).toDouble();
+    final wrapRunSpacing = (1.5.h).clamp(10.0, 20.0).toDouble();
+    final headingSpacing = (3.h).clamp(24.0, 36.0).toDouble();
+    final descriptionSpacing = (1.5.h).clamp(12.0, 22.0).toDouble();
+    final peopleSectionSpacing = (4.h).clamp(28.0, 48.0).toDouble();
 
     return Scaffold(
       backgroundColor: const Color(0xFF0B1D2A),
@@ -20,14 +36,17 @@ class FilmDetailPage extends StatelessWidget {
             backgroundColor: const Color(0xFF0B1D2A),
             elevation: 0,
             pinned: true,
-            expandedHeight: 320,
+            expandedHeight: expandedHeight,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded),
-              onPressed: () => Navigator.of(context).maybePop(),
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 22),
+              onPressed: () => context.pop(),
             ),
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding:
-                  const EdgeInsets.only(left: 16, bottom: 16, right: 16),
+              titlePadding: EdgeInsets.only(
+                left: titlePaddingHorizontal,
+                right: titlePaddingHorizontal,
+                bottom: titlePaddingBottom,
+              ),
               title: Text(
                 film.title,
                 style: theme.textTheme.titleLarge?.copyWith(
@@ -46,7 +65,8 @@ class FilmDetailPage extends StatelessWidget {
                         ? Image.network(
                             bannerUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => _buildBannerFallback(),
+                            errorBuilder: (_, __, ___) =>
+                                _buildBannerFallback(),
                           )
                         : _buildBannerFallback(),
                   ),
@@ -55,10 +75,7 @@ class FilmDetailPage extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Color(0xFF0B1D2A),
-                        ],
+                        colors: [Colors.transparent, Color(0xFF0B1D2A)],
                       ),
                     ),
                   ),
@@ -68,7 +85,12 @@ class FilmDetailPage extends StatelessWidget {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+              padding: EdgeInsets.fromLTRB(
+                contentHorizontal,
+                contentTop,
+                contentHorizontal,
+                contentBottom,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -92,10 +114,10 @@ class FilmDetailPage extends StatelessWidget {
                         fontStyle: FontStyle.italic,
                       ),
                     ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: sectionSpacing),
                   Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
+                    spacing: wrapSpacing,
+                    runSpacing: wrapRunSpacing,
                     children: [
                       if (film.releaseInfo.isNotEmpty)
                         _InfoChip(
@@ -114,7 +136,7 @@ class FilmDetailPage extends StatelessWidget {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: headingSpacing),
                   Text(
                     'Sinopsis',
                     style: theme.textTheme.titleLarge?.copyWith(
@@ -122,7 +144,7 @@ class FilmDetailPage extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: descriptionSpacing),
                   Text(
                     film.description,
                     style: theme.textTheme.bodyLarge?.copyWith(
@@ -130,7 +152,7 @@ class FilmDetailPage extends StatelessWidget {
                       height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  SizedBox(height: peopleSectionSpacing),
                   _buildPeopleSection(theme),
                 ],
               ),
@@ -153,6 +175,13 @@ class FilmDetailPage extends StatelessWidget {
 
     if (items.isEmpty) return const SizedBox.shrink();
 
+    final sectionSpacing = (1.5.h).clamp(12.0, 24.0).toDouble();
+    final cardRadius = (3.w).clamp(16.0, 28.0).toDouble();
+    final cardPadding = (4.w).clamp(16.0, 28.0).toDouble();
+    final iconSize = (4.5.w).clamp(20.0, 28.0).toDouble();
+    final iconSpacing = (4.w).clamp(12.0, 24.0).toDouble();
+    final textSpacing = (0.8.h).clamp(6.0, 12.0).toDouble();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -163,24 +192,21 @@ class FilmDetailPage extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: sectionSpacing),
         ...items.map(
           (item) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.only(bottom: sectionSpacing),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white.withAlpha(20),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(cardRadius),
               ),
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(cardPadding),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    item.icon,
-                    color: Colors.white70,
-                  ),
-                  const SizedBox(width: 16),
+                  Icon(item.icon, color: Colors.white70, size: iconSize),
+                  SizedBox(width: iconSpacing),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +218,7 @@ class FilmDetailPage extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: textSpacing),
                         Text(
                           item.value,
                           style: theme.textTheme.bodyMedium?.copyWith(
@@ -212,13 +238,15 @@ class FilmDetailPage extends StatelessWidget {
   }
 
   Widget _buildBannerFallback() {
+    final iconSize = (14.w).clamp(64.0, 128.0).toDouble();
+
     return Container(
       color: const Color(0xFF123752),
-      child: const Center(
+      child: Center(
         child: Icon(
           Icons.landscape_outlined,
           color: Colors.white54,
-          size: 72,
+          size: iconSize,
         ),
       ),
     );
@@ -233,25 +261,43 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withAlpha(31),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white70, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontWeight: FontWeight.w500,
+    final horizontalPadding = (4.5.w).clamp(16.0, 28.0).toDouble();
+    final verticalPadding = (1.2.h).clamp(10.0, 18.0).toDouble();
+    final borderRadius = (5.w).clamp(18.0, 32.0).toDouble();
+    final iconSize = (4.w).clamp(18.0, 26.0).toDouble();
+    final spacing = (2.2.w).clamp(8.0, 16.0).toDouble();
+    final textStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      color: Colors.white70,
+      fontWeight: FontWeight.w500,
+    );
+
+    return SizedBox(
+      width: double.infinity,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white.withAlpha(31),
+          borderRadius: BorderRadius.circular(borderRadius),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white70, size: iconSize),
+            SizedBox(width: spacing),
+            Expanded(
+              child: Text(
+                label,
+                style: textStyle,
+                softWrap: true,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -41,22 +41,12 @@ class FilmsCubit extends Cubit<FilmsState> {
       return;
     }
     final filtered = _filterFilms(state.films, query);
-    emit(
-      state.copyWith(
-        query: query,
-        filteredFilms: filtered,
-      ),
-    );
+    emit(state.copyWith(query: query, filteredFilms: filtered));
   }
 
   void clearSearch() {
     if (state.query.isEmpty) return;
-    emit(
-      state.copyWith(
-        query: '',
-        filteredFilms: state.films,
-      ),
-    );
+    emit(state.copyWith(query: '', filteredFilms: state.films));
   }
 
   List<GhibliFilm> _filterFilms(List<GhibliFilm> films, String query) {

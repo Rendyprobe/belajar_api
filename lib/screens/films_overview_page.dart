@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sizer/sizer.dart';
 
 import '../cubit/films_cubit.dart';
 import '../cubit/films_state.dart';
 import '../models/ghibli_film.dart';
-import 'film_detail_page.dart';
+import '../router/app_router.dart';
 
 class FilmsOverviewPage extends StatefulWidget {
   const FilmsOverviewPage({super.key});
@@ -37,6 +39,10 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final contentHorizontal = (5.w).clamp(16.0, 40.0).toDouble();
+    final headerVertical = (3.h).clamp(20.0, 48.0).toDouble();
+    final headerTitleSpacing = (1.h).clamp(8.0, 20.0).toDouble();
+    final headerSearchSpacing = (3.h).clamp(20.0, 40.0).toDouble();
 
     return Scaffold(
       backgroundColor: const Color(0xFF0B1D2A),
@@ -46,10 +52,7 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF123752),
-                Color(0xFF0B1D2A),
-              ],
+              colors: [Color(0xFF123752), Color(0xFF0B1D2A)],
             ),
           ),
           child: BlocConsumer<FilmsCubit, FilmsState>(
@@ -68,8 +71,10 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: contentHorizontal,
+                      vertical: headerVertical,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -80,14 +85,14 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: headerTitleSpacing),
                         Text(
                           'Jelajahi dunia magis karya Hayao Miyazaki dan rekan-rekannya.',
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: Colors.white70,
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: headerSearchSpacing),
                         _buildSearchField(theme),
                       ],
                     ),
@@ -108,20 +113,29 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
   }
 
   Widget _buildSearchField(ThemeData theme) {
+    final horizontalPadding = (4.5.w).clamp(14.0, 28.0).toDouble();
+    final verticalPadding = (0.9.h).clamp(10.0, 16.0).toDouble();
+    final borderRadius = (4.5.w).clamp(18.0, 32.0).toDouble();
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withAlpha(31),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(borderRadius),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: verticalPadding,
+      ),
       child: TextField(
         controller: _searchController,
         style: theme.textTheme.bodyLarge?.copyWith(color: Colors.white),
         cursorColor: Colors.white70,
-        decoration: const InputDecoration(
-          icon: Icon(Icons.search, color: Colors.white70),
+        decoration: InputDecoration(
+          icon: const Icon(Icons.search, color: Colors.white70, size: 22),
           hintText: 'Cari judul, sutradara, atau karakter',
-          hintStyle: TextStyle(color: Colors.white54),
+          hintStyle: theme.textTheme.bodyMedium?.copyWith(
+            color: Colors.white54,
+          ),
           border: InputBorder.none,
         ),
       ),
@@ -133,6 +147,11 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
     ThemeData theme,
     FilmsState state,
   ) {
+    final horizontalPadding = (5.w).clamp(16.0, 40.0).toDouble();
+    final topPadding = (1.5.h).clamp(12.0, 24.0).toDouble();
+    final bottomPadding = (4.h).clamp(24.0, 56.0).toDouble();
+    final itemSpacing = (2.4.h).clamp(16.0, 28.0).toDouble();
+
     if (state.isLoading && state.films.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(
@@ -169,19 +188,20 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
       backgroundColor: const Color(0xFF134466),
       onRefresh: context.read<FilmsCubit>().refresh,
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        padding: EdgeInsets.fromLTRB(
+          horizontalPadding,
+          topPadding,
+          horizontalPadding,
+          bottomPadding,
+        ),
         itemCount: state.filteredFilms.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 20),
+        separatorBuilder: (_, __) => SizedBox(height: itemSpacing),
         itemBuilder: (context, index) {
           final film = state.filteredFilms[index];
           return _FilmCard(
             film: film,
             onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => FilmDetailPage(film: film),
-                ),
-              );
+              context.pushNamed(AppRoutes.filmDetail, extra: film);
             },
           );
         },
@@ -196,18 +216,28 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
     String? actionLabel,
     VoidCallback? onAction,
   }) {
+    final horizontalPadding = (8.w).clamp(24.0, 64.0).toDouble();
+    final verticalPadding = (4.h).clamp(24.0, 48.0).toDouble();
+    final iconSize = (12.w).clamp(48.0, 96.0).toDouble();
+    final spacing = (2.h).clamp(12.0, 24.0).toDouble();
+    final buttonSpacing = (2.5.h).clamp(16.0, 28.0).toDouble();
+    final buttonRadius = (6.w).clamp(24.0, 36.0).toDouble();
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        padding: EdgeInsets.symmetric(
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.cloud_off,
               color: Colors.white.withAlpha(179),
-              size: 48,
+              size: iconSize,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: spacing),
             Text(
               message,
               textAlign: TextAlign.center,
@@ -217,13 +247,13 @@ class _FilmsOverviewPageState extends State<FilmsOverviewPage> {
               ),
             ),
             if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 20),
+              SizedBox(height: buttonSpacing),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white.withAlpha(51),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(buttonRadius),
                   ),
                 ),
                 onPressed: () {
@@ -252,13 +282,19 @@ class _FilmCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final imageUrl = film.imageUrl.isNotEmpty ? film.imageUrl : film.bannerUrl;
+    final cardRadius = (6.w).clamp(24.0, 36.0).toDouble();
+    final paddingHorizontal = (5.w).clamp(20.0, 32.0).toDouble();
+    final paddingTop = (2.h).clamp(16.0, 24.0).toDouble();
+    final paddingBottom = (3.h).clamp(20.0, 32.0).toDouble();
+    final infoSpacing = (1.2.h).clamp(8.0, 18.0).toDouble();
+    final secondarySpacing = (1.h).clamp(6.0, 14.0).toDouble();
 
     return InkWell(
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(cardRadius),
       onTap: onTap,
       child: Ink(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(cardRadius),
           color: Colors.white.withAlpha(20),
           boxShadow: [
             BoxShadow(
@@ -272,8 +308,9 @@ class _FilmCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(28)),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(cardRadius),
+              ),
               child: Hero(
                 tag: 'poster_${film.id}',
                 child: AspectRatio(
@@ -289,7 +326,12 @@ class _FilmCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              padding: EdgeInsets.fromLTRB(
+                paddingHorizontal,
+                paddingTop,
+                paddingHorizontal,
+                paddingBottom,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -304,7 +346,7 @@ class _FilmCard extends StatelessWidget {
                   ),
                   if (film.releaseInfo.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8),
+                      padding: EdgeInsets.only(top: infoSpacing),
                       child: Text(
                         film.releaseInfo,
                         style: theme.textTheme.bodyMedium?.copyWith(
@@ -314,7 +356,7 @@ class _FilmCard extends StatelessWidget {
                     ),
                   if (film.peopleInfo.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(top: 6),
+                      padding: EdgeInsets.only(top: secondarySpacing),
                       child: Text(
                         film.peopleInfo,
                         style: theme.textTheme.bodyMedium?.copyWith(
@@ -332,13 +374,15 @@ class _FilmCard extends StatelessWidget {
   }
 
   Widget _buildFallback() {
+    final iconSize = (10.w).clamp(40.0, 72.0).toDouble();
+
     return Container(
       color: const Color(0xFF133043),
-      child: const Center(
+      child: Center(
         child: Icon(
           Icons.local_movies_outlined,
           color: Colors.white54,
-          size: 48,
+          size: iconSize,
         ),
       ),
     );

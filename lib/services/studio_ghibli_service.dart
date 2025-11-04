@@ -4,14 +4,15 @@ import '../models/ghibli_film.dart';
 
 class StudioGhibliService {
   StudioGhibliService({Dio? dio})
-      : _dio = dio ??
-            Dio(
-              BaseOptions(
-                baseUrl: _baseUrl,
-                connectTimeout: const Duration(seconds: 10),
-                receiveTimeout: const Duration(seconds: 10),
-              ),
-            );
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
+              baseUrl: _baseUrl,
+              connectTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 10),
+            ),
+          );
 
   static const String _baseUrl = 'https://ghibliapi.vercel.app';
 
@@ -26,9 +27,7 @@ class StudioGhibliService {
       }
 
       return data
-          .map(
-            (item) => GhibliFilm.fromJson(item as Map<String, dynamic>),
-          )
+          .map((item) => GhibliFilm.fromJson(item as Map<String, dynamic>))
           .toList();
     } on DioException catch (error) {
       final statusCode = error.response?.statusCode;
